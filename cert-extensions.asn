@@ -1,0 +1,67 @@
+id-as207960-uic OBJECT IDENTIFIER ::= { 1 3 6 1 4 1 56292 1 3 }
+
+-- Extended Key Usage identifiers - RFC5280 Sec. 4.2.1.12, must be marked critical
+id-eku OBJECT IDENTIFIER ::= { id-as207960-uic 1 }
+
+id-eku-trustAnchor OBJECT IDENTIFIER ::= { id-eku 1 }
+-- The key pair may be used as a root of trust in a ticketing PKI
+
+id-eku-intCA OBJECT IDENTIFIER ::= { id-eku 2 }
+-- The key pair may be used as an intermediate CA
+
+id-eku-barcodeSignature OBJECT IDENTIFIER ::= { id-eku 3 }
+-- The key pair may be used to directly sign a ticket barcode
+
+id-eku-starCA OBJECT IDENTIFIER ::= { id-eku 4 }
+-- The key pair may be used to issue STAR certificates
+
+-- X.520 Naming Attributes - for Subject/Issuer
+id-at OBJECT IDENTIFIER ::= { id-as207960-uic 2 }
+
+id-at-companyCode OBJECT IDENTIFIER ::= { id-at 1 }
+X520CompanyCode ::= CompanyCode
+
+it-at-keyId OBJECT IDENTIFIER ::= { id-at 2 }
+X520KeyId ::= Choice {
+	number INTEGER (0..99999), -- For DOSIPAS envelopes,
+	ia5 IA5String (SIZE (5)) -- For #UT envelopes
+}
+
+-- X.509 Certificate Extensions
+id-ext OBJECT IDENTIFIER ::= { id-as207960-uic 3 }
+
+-- Restrictions on what products a key may be used for, must be marked critical
+id-ext-keyRestrictions OBJECT IDENTIFIER ::= { id-ext 1 }
+ExtKeyRestrictions ::= SEQUENCE {
+	securePaperOnly BOOLEAN DEFAULT FALSE,
+	-- Ticket must be checked against eTCD (or equivalent)
+	onlineValidationRequired BOOLEAN DEFAULT FALSE,
+	restrictedToProducts SEQUENCE OF ProductID OPTIONAL,
+	restrictedToProductOwners SEQUENCE OF CompanyCode OPTIONAL,
+	restrictedToCarriers SEQUENCE OF CompanyCode OPTIONAL,
+	-- As defined by https://uic.org/service-brand-code-list
+	restrictedToServiceBrands SEQUENCE OF INTEGER (1..32000) OPTIONAL,
+	-- As defined by EN 1545-1 transport type code
+	restrictedToTransportTypes SEQUENCE OF INTEGER (0..31) OPTIONAL,
+	restrictedToBarcodeTypes SEQUENCE OF BarcodeType OPTIONAL,
+	ticketInspectionNotice UTF8String OPTIONAL,
+	...
+}
+
+ProductID ::= CHOICE {
+	num INTEGER (0..65535),
+  	ia5 IA5String
+}
+
+CompanyCode ::= CHOICE {
+	codeNum INTEGER (1..32000),
+	codeIA5 IA5String
+}
+
+BarcodeType ::= ENUMERATED {
+	ticket,
+	reservation,
+	commercialCard,
+	proprietary,
+	...
+}

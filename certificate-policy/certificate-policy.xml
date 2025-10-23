@@ -1,0 +1,1525 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE rfc [
+    <!ENTITY nbsp    "&#160;">
+    <!ENTITY zwsp   "&#8203;">
+    <!ENTITY nbhy   "&#8209;">
+    <!ENTITY wj     "&#8288;">
+    ]>
+<rfc submissionType="independent" ipr="none" docName="tpki-certificate-policy-1" category="info"
+     xmlns:xi="http://www.w3.org/2001/XInclude" version="3" sortRefs="true" indexInclude="false">
+  <front>
+    <title abbrev="TPKI CP">Ticketing PKI Certificate Policy</title>
+    <author fullname="Q Misell" initials="Q" role="editor" surname="Misell">
+      <organization abbrev="MPI-INF">Max-Planck Institut für Informatik</organization>
+      <address>
+        <postal>
+          <street>Campus E1.4</street>
+          <city>Saabrücken</city>
+          <code>66125</code>
+          <country>DE</country>
+        </postal>
+        <email>qmisell@mpi-inf.mpg.de</email>
+        <uri>https://magicalcodewit.ch</uri>
+      </address>
+    </author>
+    <date/>
+    <workgroup>UIC TSG</workgroup>
+    <abstract>
+      <t>This document describes the certificate policy for a Public Key Infrastructure (PKI) used to support the
+        issuance and validation of barcodes for transport ticketing. Each organisation that issues such tickets will
+        obtain a certificate under this TPKI for providing a digital signature over their tickets. These certificates
+        will allow other transport undertakings to verify the authenticity of the ticket barcodes and the issuer's
+        authorisation to issue such tickets.
+      </t>
+    </abstract>
+    <note removeInRFC="true">
+      <t>The OIDs assigned in this document under <tt>1.3.6.1.4.1.56292.1.3</tt> are not final, and are merely assigned
+        for experimentation purposes.
+      </t>
+    </note>
+  </front>
+  <middle>
+    <section>
+      <name>Introduction</name>
+      <t>This document describes the certificate policy for a Public Key Infrastructure (PKI) used to support the
+        issuance and validation of barcodes for transport ticketing - a Ticketing PKI (TPKI). This PKI is designed
+        exclusively for use in support of validation of claims relating to transport ticketing via barcoded tickets.
+        Use of the certificates, Certificate Revocation Lists (CRLs), or any other artifact managed under this PKI for
+        any other purpose is a violation of this CP, and relying parties (RPs) <bcp14>MUST</bcp14> reject certificates
+        presented for such uses.
+      </t>
+      <t>This document is based on the template specified in<xref target="RFC3647"/>, a product of the Internet
+        Engineering Task Force (IETF) stream. Its section numbering has been maintained to allow direct comparison of
+        Certificate Policies and Certification Practice Statements. Certification Practice Statements issued under this
+        PKI <bcp14>MUST</bcp14> retain the same section numbering.
+      </t>
+      <t>The key words <bcp14>MUST</bcp14>, <bcp14>MUST NOT</bcp14>, <bcp14>REQUIRED</bcp14>, <bcp14>SHALL</bcp14>,
+        <bcp14>SHALL NOT</bcp14>, <bcp14>SHOULD</bcp14>, <bcp14>SHOULD NOT</bcp14>, <bcp14>RECOMMENDED</bcp14>,
+        <bcp14>NOT RECOMMENDED</bcp14>, <bcp14>MAY</bcp14>, and <bcp14>OPTIONAL</bcp14> in this document are to be
+        interpreted as described in
+        <xref target="BCP14"/>
+        when, and only when, they appear in all capitals, as shown here.
+      </t>
+      <section>
+        <name>Overview</name>
+        <t>This document defines a set of technologies, rules, and requirements necessary - but not sufficient - for
+          the operation of a PKI for Ticketing (TPKI). Certificates issued in this PKI are trusted by virtue of their
+          corresponding root CA being installed on the ticket control device concerned.
+        </t>
+        <t>It is envisaged that there may be several roots in a global TPKI ecosystem. Each of these root CAs will exist
+          to serve a different market. The primary of these will be the UIC's root.
+        </t>
+        <t>This CP sets a common set of rules that all root CAs must follow, regardless of their specifics of operation,
+          to ensure adequate interoperability between root CAs. Each root CA, and each subordinate CA thereof,
+          <bcp14>MUST</bcp14>
+          create and publish a CPS, in compliance with this CP.
+        </t>
+        <t>These requirements are applicable to all participants in a TPKI.</t>
+        <t>In the event of a disagreement between this document and other agreements in the TPKI, this document
+          has precedence.
+        </t>
+      </section>
+      <section anchor="doc-id">
+        <name>Document name and identification</name>
+        <t>This certificate policy (CP) contains the requirements for the issuance and management of certificates for
+          public transport ticketing, as adopted by the UIC's Ticketing Security Working Group (TSG). This document
+          may be cited as TPKI CP vX.X.
+        </t>
+        <t>This policy has been assigned the following OID:</t>
+        <sourcecode type="asn.1">
+          id-uic-tpki-cp-0 OBJECT IDENTIFIER ::= { iso(1) identified-organization(3)
+          dod(6) internet(1) private(4) enterprise(1) as207960(56292) pki(1) uic(3)
+          cp(4) 0 }
+        </sourcecode>
+      </section>
+      <section>
+        <name>PKI participants</name>
+        <section>
+          <name>Certification authorities</name>
+          <t>The CA is this PKI is responsible for the issuance of certificates in accordance with this CP and its CPS.
+            The primary CA is the root CA. Other participants may be CA insofar as they issue STAR certificates.
+          </t>
+        </section>
+        <section>
+          <name>Registration authorities</name>
+          <t>The registration authority is responsible for verifying that applications for new certificate issuance
+            are legitimate and in accordance with this CP and its CPS. The RA checks the subscriber's authority to
+            hold such a certificate, and that this is a genuine request of the subscriber.
+          </t>
+          <t>It is envisaged that the CA and the RA roles are primarily performed by the same entity, but this CP
+            does not preclude the separation of these functions.
+          </t>
+        </section>
+        <section>
+          <name>Subscribers</name>
+          <t>Subscribers are those entities that receive a certificate under this TPKI for signing ticket barcodes.
+            These could be a transport undertaking directly issuing their own tickets, or an organisation authorised to
+            distribute tickets but not operating transport services themselves.
+          </t>
+        </section>
+        <section>
+          <name>Relying parties</name>
+          <t>Relying parties are those entities that use certificates from this TPKI to verify the authenticity of
+            tickets barcodes. These are primarily transport undertakings verifying tickets on-board their services.
+          </t>
+          <t>A relying party may also be a subscriber if they issue tickets as well as verify them.</t>
+        </section>
+        <section>
+          <name>Other participants</name>
+          <t>All CAs in the TPKI are responsible for publishing certain artefacts. These duties <bcp14>MAY</bcp14> be
+            performed by the CA directly, or <bcp14>MAY</bcp14> be outsourced.
+          </t>
+        </section>
+      </section>
+      <section>
+        <name>Certificate usage</name>
+        <section>
+          <name>Appropriate certificate uses</name>
+          <t>Certificates issued under this CP <bcp14>MAY</bcp14> be used for the purposes of verifying ticket barcodes.
+          </t>
+        </section>
+        <section>
+          <name>Prohibited certificate uses</name>
+          <t>Certificates issued under this CP <bcp14>MUST NOT</bcp14> be accepted for any use outside that of verifying
+            tickets for transport purposes.
+          </t>
+        </section>
+      </section>
+      <section>
+        <name>Policy administration</name>
+        <section>
+          <name>Organization administering the document</name>
+          <t>This CP is administered by:</t>
+          <t>
+            International Union of Railways
+            <br/>
+            16 rue Jean Rey
+            <br/>
+            75015 Paris
+            <br/>
+            <eref target="https://uic.org">uic.org</eref>
+          </t>
+        </section>
+        <section>
+          <name>Contact person</name>
+          <t>TODO</t>
+        </section>
+        <section>
+          <name>Person determining CPS suitability for the policy</name>
+          <t>No stipulation. Each root CA in this TPKI is to be judged on its own merits by those trusting it for
+            ticketing purposes.
+          </t>
+        </section>
+        <section>
+          <name>CPS approval procedures</name>
+          <t>No stipulation. Each root CA in this TPKI is to be judged on its own merits by those trusting it for
+            ticketing purposes.
+          </t>
+        </section>
+      </section>
+      <section>
+        <name>Definitions and acronyms</name>
+        <dl>
+          <dt>CPS</dt>
+          <dd>Certification Practice Statement. A CPS is a document that
+            specifies the practices that a Certification Authority (CA)
+            employs in issuing certificates in this PKI.
+          </dd>
+          <dt>STAR Certificate</dt>
+          <dd>A Short-Term Automatically Renewed certificate, issued in the UIC message recovery signature end-entity
+            certificate format (see<xref target="star-cert-format"/>), for direct inclusion into a ticket barcode.
+          </dd>
+          <dt>UIC</dt>
+          <dd>The International Union of Railways</dd>
+          <dt>RICS</dt>
+          <dd>Railway Interchange Coding System</dd>
+          <dt>ERA</dt>
+          <dd>European Union Agency for Railways</dd>
+        </dl>
+      </section>
+    </section>
+    <section>
+      <name>Publication and Repository Responsibilities</name>
+      <section>
+        <name>Repositories</name>
+        <t>Certificates and CRLs <bcp14>MUST</bcp14> be made available for downloading by all relying parties. Each
+          CA <bcp14>MUST</bcp14> maintain an online, publicly accessible, repository of all certificates and CRLs
+          issued.
+        </t>
+        <t>Certificates an CRLs <bcp14>MUST</bcp14> be provided over HTTP with TLS<xref target="RFC9110"/>. The
+          certificate repository <bcp14>MUST</bcp14> be a DER encoded "certs-only" CMS message as specified in<xref
+              target="RFC2797"/>.
+        </t>
+        <t>A CA <bcp14>MAY</bcp14> publish certificates and CRLs via other means, in addition.
+        </t>
+      </section>
+      <section>
+        <name>Publication of certification information</name>
+        <t>Each CA <bcp14>MUST</bcp14> publish the certificates, except STAR certificates, that it issues.
+        </t>
+        <t>Each CA <bcp14>MUST</bcp14> publish the CRLs that it issues.
+        </t>
+        <t>Each CA <bcp14>MUST</bcp14> create and publish a CPS that meets the requirements set forth in this CP.
+          Publication means that the CPS is openly available to the public.
+          It is <bcp14>RECOMMENDED</bcp14> that this be via publication on a website.
+        </t>
+        <t>An organisation <bcp14>MAY</bcp14> choose to outsource the publication of data.
+        </t>
+      </section>
+      <section>
+        <name>Time or frequency of publication</name>
+        <t>The CPS for each CA <bcp14>MUST</bcp14> specify the following information:
+        </t>
+        <ol>
+          <li>The period of time within which a certificate will be published after the CA issues the certificate.</li>
+          <li>The period of time within which a CA will publish a CRL with an entry for a revoked certificate after it
+            revokes that certificate.
+          </li>
+        </ol>
+        <t>The CA <bcp14>MUST</bcp14> maintain version control on its CPS, allow retrieval of older versions of its CPS,
+          and indicate when and how its CPS was updated via changelog.
+        </t>
+      </section>
+      <section>
+        <name>Access controls on repositories</name>
+        <t>Participants <bcp14>MUST</bcp14> make their repositories publicly available in a read-only manner.
+        </t>
+      </section>
+    </section>
+    <section>
+      <name>Identification and Authentication</name>
+      <section>
+        <name>Naming</name>
+        <section>
+          <name>Types of names</name>
+          <section anchor="std-cert-names">
+            <name>Standard certificates</name>
+            <t>Subjects of certificates are identified via an X.500 Distinguished Name. A name <bcp14>MUST</bcp14> contain:
+            </t>
+            <ul>
+              <li>ISO 3166
+                <xref target="ISO3166-1"/>
+                Country Code (<tt>2.5.4.6</tt>) - country in which the subject is incorporated.
+              </li>
+              <li>Organisation name (<tt>2.5.4.10</tt>) - full legal name of the subject.
+              </li>
+              <li>Company code (<tt>1.3.6.1.4.1.56292.1.3.2.1</tt>, see<xref target="at-company-code"/>) - the UIC
+                RICS of the subject or, if no RICS is available, an otherwise specified company code as per the CA's
+                CPS.
+              </li>
+            </ul>
+            <t>A name <bcp14>MAY</bcp14> also contain:
+            </t>
+            <ul>
+              <li>State or province name (<tt>2.5.4.8</tt>) - first level administrative subdivision in which the
+                subject is incorporated, per ISO 3166 part 2<xref target="ISO3166-2"/>.
+              </li>
+            </ul>
+            <t>In the case of an end-entity certificate (i.e. one used to sign tickets) the following attributes <bcp14>
+              MUST
+            </bcp14> be present:
+            </t>
+            <ul>
+              <li>Key ID (<tt>1.3.6.1.4.1.56292.1.3.2.2</tt>, see<xref target="at-key-id"/>) - a unique identifier for
+                a subject's key pair, to allow for correlating public keys and signatures in tickets.
+              </li>
+            </ul>
+            <t>In the case of non end-entity certificates, the following attributes <bcp14>MUST</bcp14> be present:
+            </t>
+            <ul>
+              <li>Common Name (<tt>2.5.4.3</tt>) - a textual description of the purpose of this certificate, e.g. "UIC
+                Root CA" or "UIC Intermediate CA 1"
+              </li>
+            </ul>
+            <t>A CA may, in its CPS, define the inclusion of other attributes.</t>
+          </section>
+          <section>
+            <name>STAR Certificates</name>
+            <t>A STAR certificate, per specification, contains a company code, and a serial number. No other forms of
+              naming ar permissible.
+            </t>
+          </section>
+        </section>
+        <section>
+          <name>Need for names to be meaningful</name>
+          <t>Names in this TPKI <bcp14>MUST</bcp14> be meaningful. It <bcp14>SHALL</bcp14> be possible to map from a
+            name within a certificate to a legal entity, and thus who is responsible for a certificate and its
+            corresponding private key.
+          </t>
+        </section>
+        <section>
+          <name>Anonymity or pseudonymity of subscribers</name>
+          <t>Subscribers to this PKI <bcp14>SHALL NOT</bcp14> be anonymous.
+          </t>
+        </section>
+        <section>
+          <name>Rules for interpreting various name forms</name>
+          <section>
+            <name>Standard certificates</name>
+            <t>The primary identifier of a certificate is the combination of company code and key ID. That alone
+              <bcp14>MUST</bcp14>
+              be sufficient to identify a certificate, and therefore public key, for verifying a ticket barcode.
+            </t>
+          </section>
+          <section>
+            <name>STAR Certificates</name>
+            <t>STAR Certificates are identified by their inclusion in a ticket barcode. Their serial number exists only
+              to effectuate the checking of the revocation status of a STAR certificate.
+            </t>
+          </section>
+        </section>
+        <section>
+          <name>Uniqueness of names</name>
+          <t>Names within this PKI <bcp14>MUST</bcp14> be unique. No certificate is permitted to be issued with an
+            identical subject name, unless it is issued to the same legal entity for the same subject public key
+            information as an extant certificate.
+          </t>
+        </section>
+        <section>
+          <name>Recognition, authentication, and role of trademarks</name>
+          <t>No stipulation.</t>
+        </section>
+      </section>
+      <section>
+        <name>Initial identity validation</name>
+        <section>
+          <name>Method to prove possession of private key</name>
+          <t>TODO: some way to verify that the correct key in installed in the ticketing system requesting issuance.
+            This is to avoid fuckups again similar to Salzburg and NS.
+          </t>
+        </section>
+        <section>
+          <name>Authentication of organization identity</name>
+          <t>The CA <bcp14>MUST</bcp14>, in its CPS, detail how it verifies the particulars of an applicant
+            organisation.
+          </t>
+        </section>
+        <section>
+          <name>Authentication of individual identity</name>
+          <t>The CA <bcp14>MUST</bcp14>, in its CPS, detail how it verifies the identity of an individual applying on
+            behalf of an organisation
+          </t>
+        </section>
+        <section>
+          <name>Non-verified subscriber information</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>Validation of authority</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>Criteria for interoperation</name>
+          <t>The CA <bcp14>MUST</bcp14>, in its CPS, detail how it verifies that an individual is authorised to apply
+            on behalf of an organisation.
+          </t>
+        </section>
+      </section>
+      <section>
+        <name>Identification and authentication for re-key requests</name>
+        <section>
+          <name>Identification and authentication for routine re-key</name>
+          <t>All requests for a certificate issuance <bcp14>MUST</bcp14> be treated independently, and assessed on
+            their own merits.
+          </t>
+        </section>
+        <section>
+          <name>Identification and authentication for re-key after revocation</name>
+          <t>All requests for a certificate issuance <bcp14>MUST</bcp14> be treated independently, and assessed on
+            their own merits.
+          </t>
+        </section>
+      </section>
+      <section>
+        <name>Identification and authentication for revocation request</name>
+        <t>Requests to revoke a certificate <bcp14>MUST</bcp14> be verified to the same level as was used to verify
+          the application for issuance.
+        </t>
+      </section>
+    </section>
+    <section>
+      <name>Certificate Life-Cycle Operational Requirements</name>
+      <section>
+        <name>Certificate Application</name>
+        <section>
+          <name>Who can submit a certificate application</name>
+          <t>Any entity wishing to issue ticketing barcodes <bcp14>SHOULD</bcp14> obtain a certificate from a CA
+            suitable for the environment in which their barcodes will be verified, e.g. the UIC CA for international
+            railway ticketing.
+          </t>
+          <t>The application procedure <bcp14>MUST</bcp14> be described in the CPS for each CA.
+          </t>
+        </section>
+        <section>
+          <name>Enrollment process and responsibilities</name>
+          <t>The applicant <bcp14>MUST</bcp14> generate a key pair themselves and communicate such public key to the RA
+            along with their application particulars. No party is permitted to generate the key pair on behalf of the
+            applicant. The RA verifies the application, and communicates the request to the CA for issuance, via a
+            secured channel.
+          </t>
+          <t>The exact details of the application particulars <bcp14>MUST</bcp14> be described in the CPS for each CA.
+          </t>
+        </section>
+      </section>
+      <section>
+        <name>Certificate application processing</name>
+        <t>CAs <bcp14>SHOULD</bcp14> make use of extant standards for processing certificate requests.
+          Each CA <bcp14>MUST</bcp14> define in its CPS, the certificate request and response standards that it employs.
+        </t>
+        <section>
+          <name>Performing identification and authentication functions</name>
+          <t>It is the responsibility of the RA to verify the providence of applications, and that the application is
+            allowable per this TPKI and its CPS. The legal identity of the applicant organisation
+            <bcp14>MUST</bcp14>
+            be established, as certificates in this TPKI are bound to legal entities.
+          </t>
+        </section>
+        <section>
+          <name>Approval or rejection of certificate applications</name>
+          <t>The details of how certificate applications are approved <bcp14>MUST</bcp14> be described in the CA's CPS
+          </t>
+        </section>
+        <section>
+          <name>Time to process certificate applications</name>
+          <t>No stipulation.</t>
+        </section>
+      </section>
+      <section>
+        <name>Certificate issuance</name>
+        <section>
+          <name>CA actions during certificate issuance</name>
+          <t>When a CA deems an application acceptable, it <bcp14>MUST</bcp14> issue the corresponding certificate and
+            publish it its corresponding repository.
+          </t>
+        </section>
+        <section anchor="cert-issuance-notification">
+          <name>Notification to subscriber by the CA of issuance of certificate</name>
+          <t>The CA <bcp14>MUST</bcp14> notify the applicant of certificate issuance, and <bcp14>SHOULD</bcp14> attach
+            a copy of the certificate to this notification.
+          </t>
+        </section>
+      </section>
+      <section>
+        <name>Certificate acceptance</name>
+        <section anchor="cert-issuance-acceptance">
+          <name>Conduct constituting certificate acceptance</name>
+          <t>No stipulation.</t>
+        </section>
+        <section anchor="cert-issuance-publish">
+          <name>Publication of the certificate by the CA</name>
+          <t>The CA <bcp14>MUST</bcp14> publish the certificate it its corresponding repository, unless it is a STAR
+            certificate.
+          </t>
+        </section>
+        <section anchor="cert-issuance-notify-others">
+          <name>Notification of certificate issuance by the CA to other entities</name>
+          <t>No stipulation.</t>
+        </section>
+      </section>
+      <section>
+        <name>Key pair and certificate usage</name>
+        <section>
+          <name>Subscriber private key and certificate usage</name>
+          <t>The subscriber <bcp14>MUST</bcp14> take all reasonable steps to ensure its private key is secured and is
+            not mis-used.
+          </t>
+          <t>A CA <bcp14>MAY</bcp14>, it its CPS, place further restrictions on the handling of subscriber private keys.
+          </t>
+        </section>
+        <section>
+          <name>Relying party public key and certificate usage</name>
+          <t>A relying party <bcp14>MUST</bcp14> make reasonable efforts to check the validity and revocation status of
+            a certificate before accepting it for ticketing purposes, i.e. with CRLs or OCSP.
+          </t>
+        </section>
+      </section>
+      <section>
+        <name>Certificate renewal</name>
+        <section>
+          <name>Circumstance for certificate renewal</name>
+          <section>
+            <name>Standard Certificates</name>
+            <t>Certificates in this TPKI <bcp14>MUST NOT</bcp14> be renewed. Once a key ID (see
+              <xref target="std-cert-names"/>) is attached to a public key, that public key is considered 'spent', and a
+              certificate with that public key <bcp14>MUST NOT</bcp14> be further renewed beyond its original lifetime.
+              This
+              stipulation does not apply to STAR certificates, as they do not include a key ID.
+            </t>
+          </section>
+          <section>
+            <name>STAR Certificates</name>
+            <t>A STAR certificate may be renewed up to the cryptographic lifetime of its public key.</t>
+            <t>A renewed STAR certificate <bcp14>MUST</bcp14> be identical to the old certificate, except for a new
+              serial number, and different validity dates. The validity dates <bcp14>SHOULD</bcp14> overlap.
+            </t>
+          </section>
+        </section>
+        <section>
+          <name>Who may request renewal</name>
+          <section>
+            <name>Standard Certificates</name>
+            <t>Not applicable.</t>
+          </section>
+          <section>
+            <name>STAR Certificates</name>
+            <t>Only the certificate holder or the issuing CA may initiate renewal. The certificate holder
+              <bcp14>MAY</bcp14>request an early renewal, if it, as an example, expects to be unavailable to support
+              the renewal process during the normal expiration period.
+              An issuing CA <bcp14>MAY</bcp14> initiate the renewal process based on the certificate expiration date.
+            </t>
+          </section>
+        </section>
+        <section>
+          <name>Processing certificate renewal requests</name>
+          <section>
+            <name>Standard Certificates</name>
+            <t>Not applicable.</t>
+          </section>
+          <section>
+            <name>STAR Certificates</name>
+            <t>The CA <bcp14>MUST</bcp14> verify that the certificate has not been revoked before renewing it.
+              It <bcp14>MUST</bcp14> issue the renewed certificate to the same subject public key.
+            </t>
+          </section>
+        </section>
+        <section>
+          <name>Notification of new certificate issuance to subscriber</name>
+          <t>No additional stipulations beyond<xref target="cert-issuance-notification"/>.
+          </t>
+        </section>
+        <section>
+          <name>Conduct constituting acceptance of a renewal certificate</name>
+          <t>No additional stipulations beyond<xref target="cert-issuance-acceptance"/>.
+          </t>
+        </section>
+        <section>
+          <name>Publication of the renewal certificate by the CA</name>
+          <t>No additional stipulations beyond<xref target="cert-issuance-publish"/>.
+          </t>
+        </section>
+        <section>
+          <name>Notification of certificate issuance by the CA to other entities</name>
+          <t>No additional stipulations beyond<xref target="cert-issuance-notify-others"/>.
+          </t>
+        </section>
+      </section>
+      <section>
+        <name>Certificate re-key</name>
+        <section>
+          <name>Circumstance for certificate re-key</name>
+          <t>Certificates in this TPKI <bcp14>MUST NOT</bcp14> be re-keyed.
+          </t>
+        </section>
+        <section>
+          <name>Who may request certification of a new public key</name>
+          <t>Not applicable.</t>
+        </section>
+        <section>
+          <name>Processing certificate re-keying requests</name>
+          <t>Not applicable.</t>
+        </section>
+        <section>
+          <name>Notification of new certificate issuance to subscriber</name>
+          <t>Not applicable.</t>
+        </section>
+        <section>
+          <name>Conduct constituting acceptance of a re-keyed certificate</name>
+          <t>Not applicable.</t>
+        </section>
+        <section>
+          <name>Publication of the re-keyed certificate by the CA</name>
+          <t>Not applicable.</t>
+        </section>
+        <section>
+          <name>Notification of certificate issuance by the CA to other entities</name>
+          <t>Not applicable.</t>
+        </section>
+      </section>
+      <section>
+        <name>Certificate modification</name>
+        <section>
+          <name>Circumstance for certificate modification</name>
+          <t>Certificates in this TPKI <bcp14>MUST NOT</bcp14> be modified.
+          </t>
+        </section>
+        <section>
+          <name>Who may request certificate modification</name>
+          <t>Not applicable.</t>
+        </section>
+        <section>
+          <name>Processing certificate modification requests</name>
+          <t>Not applicable.</t>
+        </section>
+        <section>
+          <name>Notification of new certificate issuance to subscriber</name>
+          <t>Not applicable.</t>
+        </section>
+        <section>
+          <name>Conduct constituting acceptance of modified certificate</name>
+          <t>Not applicable.</t>
+        </section>
+        <section>
+          <name>Publication of the modified certificate by the CA</name>
+          <t>Not applicable.</t>
+        </section>
+        <section>
+          <name>Notification of certificate issuance by the CA to other entities</name>
+          <t>Not applicable.</t>
+        </section>
+      </section>
+      <section>
+        <name>Certificate revocation and suspension</name>
+        <section>
+          <name>Circumstances for revocation</name>
+        </section>
+        <section>
+          <name>Who can request revocation</name>
+        </section>
+        <section>
+          <name>Procedure for revocation request</name>
+        </section>
+        <section>
+          <name>Revocation request grace period</name>
+        </section>
+        <section>
+          <name>Time within which CA must process the revocation request</name>
+        </section>
+        <section>
+          <name>Revocation checking requirement for relying parties</name>
+        </section>
+        <section>
+          <name>CRL issuance frequency</name>
+        </section>
+        <section>
+          <name>Maximum latency for CRLs</name>
+        </section>
+        <section>
+          <name>On-line revocation/status checking availability</name>
+        </section>
+        <section>
+          <name>On-line revocation checking requirements</name>
+        </section>
+        <section>
+          <name>Other forms of revocation advertisements available</name>
+        </section>
+        <section>
+          <name>Special requirements re key compromise</name>
+        </section>
+        <section>
+          <name>Circumstances for suspension</name>
+        </section>
+        <section>
+          <name>Who can request suspension</name>
+        </section>
+        <section>
+          <name>Procedure for suspension request</name>
+        </section>
+        <section>
+          <name>Limits on suspension period</name>
+        </section>
+      </section>
+      <section>
+        <name>Certificate status services</name>
+        <section>
+          <name>Operational characteristics</name>
+        </section>
+        <section>
+          <name>Service availability</name>
+        </section>
+        <section>
+          <name>Optional features</name>
+        </section>
+      </section>
+      <section>
+        <name>End of subscription</name>
+        <t>If a subscriber decides it no longer wishes to utilise the services of a CA, or a CA decides it no longer
+          wishes to provide services to that subscriber, the CA <bcp14>MUST</bcp14> revoke all unexpired certificates
+          issued to that subscriber.
+        </t>
+      </section>
+      <section>
+        <name>Key escrow and recovery</name>
+        <section>
+          <name>Key escrow and recovery policy and practices</name>
+        </section>
+        <section>
+          <name>Session key encapsulation and recovery policy and practices</name>
+        </section>
+      </section>
+    </section>
+    <section>
+      <name>Facility, management, and operational controls</name>
+      <section>
+        <name>Physical controls</name>
+        <section>
+          <name>Site location and construction</name>
+        </section>
+        <section>
+          <name>Physical access</name>
+        </section>
+        <section>
+          <name>Power and air conditioning</name>
+        </section>
+        <section>
+          <name>Water exposures</name>
+        </section>
+        <section>
+          <name>Fire prevention and protection</name>
+        </section>
+        <section>
+          <name>Media storage</name>
+        </section>
+        <section>
+          <name>Waste disposal</name>
+        </section>
+        <section>
+          <name>Off-site backup</name>
+        </section>
+      </section>
+      <section>
+        <name>Procedural controls</name>
+        <section>
+          <name>Trusted roles</name>
+        </section>
+        <section>
+          <name>Number of persons required per task</name>
+        </section>
+        <section>
+          <name>Identification and authentication for each role</name>
+        </section>
+        <section>
+          <name>Roles requiring separation of duties</name>
+        </section>
+      </section>
+      <section>
+        <name>Personnel controls</name>
+        <section>
+          <name>Qualifications, experience, and clearance requirements</name>
+        </section>
+        <section>
+          <name>Background check procedures</name>
+        </section>
+        <section>
+          <name>Training requirements</name>
+        </section>
+        <section>
+          <name>Retraining frequency and requirements</name>
+        </section>
+        <section>
+          <name>Job rotation frequency and sequence</name>
+        </section>
+        <section>
+          <name>Sanctions for unauthorized actions</name>
+        </section>
+        <section>
+          <name>Independent contractor requirements</name>
+        </section>
+        <section>
+          <name>Documentation supplied to personnel-</name>
+        </section>
+      </section>
+      <section>
+        <name>Audit logging procedures</name>
+        <section>
+          <name>Types of events recorded</name>
+        </section>
+        <section>
+          <name>Frequency of processing log</name>
+        </section>
+        <section>
+          <name>Retention period for audit log</name>
+        </section>
+        <section>
+          <name>Protection of audit log</name>
+        </section>
+        <section>
+          <name>Audit log backup procedures</name>
+        </section>
+        <section>
+          <name>Audit collection system (internal vs. external)</name>
+        </section>
+        <section>
+          <name>Notification to event-causing subject</name>
+        </section>
+        <section>
+          <name>Vulnerability assessments</name>
+        </section>
+      </section>
+      <section>
+        <name>Records archival</name>
+        <section>
+          <name>Types of records archived</name>
+        </section>
+        <section>
+          <name>Retention period for archive</name>
+        </section>
+        <section>
+          <name>Protection of archive</name>
+        </section>
+        <section>
+          <name>Archive backup procedures</name>
+        </section>
+        <section>
+          <name>Requirements for time-stamping of records</name>
+        </section>
+        <section>
+          <name>Archive collection system (internal or external)</name>
+        </section>
+        <section>
+          <name>Procedures to obtain and verify archive information</name>
+        </section>
+      </section>
+      <section>
+        <name>Key changeover</name>
+      </section>
+      <section>
+        <name>Compromise and disaster recovery</name>
+        <section>
+          <name>Incident and compromise handling procedures</name>
+        </section>
+        <section>
+          <name>Computing resources, software, and/or data are corrupted</name>
+        </section>
+        <section>
+          <name>Entity private key compromise procedures</name>
+        </section>
+        <section>
+          <name>Business continuity capabilities after a disaster</name>
+        </section>
+      </section>
+      <section>
+        <name>CA or RA termination</name>
+        <t>Each root CA in this TPKI stands independently and there exists no higher authority to terminate their
+          right to be a CA, except that of distrust by relying parties.
+        </t>
+        <t>This CP makes no stipulation about the procedures for a CA terminating its relationship with an RA.</t>
+      </section>
+    </section>
+    <section>
+      <name>Technical Security Controls</name>
+      <section>
+        <name>Key pair generation and installation</name>
+        <section>
+          <name>Key pair generation</name>
+        </section>
+        <section>
+          <name>Private key delivery to subscriber</name>
+        </section>
+        <section>
+          <name>Public key delivery to certificate issuer</name>
+        </section>
+        <section>
+          <name>CA public key delivery to relying parties</name>
+        </section>
+        <section>
+          <name>Key sizes</name>
+        </section>
+        <section>
+          <name>Public key parameters generation and quality checking</name>
+        </section>
+        <section>
+          <name>Key usage purposes (as per X.509 v3 key usage field)</name>
+        </section>
+      </section>
+      <section>
+        <name>Private Key Protection and Cryptographic Module Engineering Controls</name>
+        <section>
+          <name>Cryptographic module standards and controls</name>
+        </section>
+        <section>
+          <name>Private key (n out of m) multi-person control</name>
+        </section>
+        <section>
+          <name>Private key escrow</name>
+        </section>
+        <section>
+          <name>Private key backup</name>
+        </section>
+        <section>
+          <name>Private key archival</name>
+        </section>
+        <section>
+          <name>Private key transfer into or from a cryptographic module</name>
+        </section>
+        <section>
+          <name>Private key storage on cryptographic module</name>
+        </section>
+        <section>
+          <name>Method of activating private key</name>
+        </section>
+        <section>
+          <name>Method of deactivating private key</name>
+        </section>
+        <section>
+          <name>Method of destroying private key</name>
+        </section>
+        <section>
+          <name>Cryptographic Module Rating</name>
+        </section>
+      </section>
+      <section>
+        <name>Other aspects of key pair management</name>
+        <section>
+          <name>Public key archival</name>
+        </section>
+        <section>
+          <name>Certificate operational periods and key pair usage periods</name>
+        </section>
+      </section>
+      <section>
+        <name>Activation data</name>
+        <section>
+          <name>Activation data generation and installation</name>
+        </section>
+        <section>
+          <name>Activation data protection</name>
+        </section>
+        <section>
+          <name>Other aspects of activation data</name>
+        </section>
+      </section>
+      <section>
+        <name>Computer security controls</name>
+        <section>
+          <name>Specific computer security technical requirements</name>
+        </section>
+        <section>
+          <name>Computer security rating</name>
+        </section>
+      </section>
+      <section>
+        <name>Life cycle technical controls</name>
+        <section>
+          <name>System development controls</name>
+        </section>
+        <section>
+          <name>Security management controls</name>
+        </section>
+        <section>
+          <name>Life cycle security controls</name>
+        </section>
+      </section>
+      <section>
+        <name>Network security controls</name>
+      </section>
+      <section>
+        <name>Time-stamping</name>
+      </section>
+    </section>
+    <section>
+      <name>Certificate, CRL, and OCSP Profiles</name>
+      <section>
+        <name>Certificate profile</name>
+        <section>
+          <name>Version number(s)</name>
+          <t>For standard certificates they <bcp14>MUST</bcp14> be version 3 certificates as per
+            <xref target="RFC5280"/>.
+            For STAR Certificates they <bcp14>MUST</bcp14> follow the format defined in
+            <xref target="star-cert-format"/>.</t>
+        </section>
+        <section>
+          <name>Certificate extensions</name>
+          <section>
+            <name>Root CA</name>
+            <t>Root CA certificates in this PKI <bcp14>MUST</bcp14> include the following extensions:</t>
+            <ul>
+              <li><tt>basicConstraints</tt>; <bcp14>MUST</bcp14> be critical; <bcp14>MUST</bcp14> have <tt>cA</tt> set to true, and <bcp14>MUST NOT</bcp14> not have a path length constraint.</li>
+              <li><tt>keyUsage</tt>; <bcp14>MUST</bcp14> be critical; <bcp14>MUST</bcp14> assert only <tt>keyCertSign</tt> and <tt>cRLSign</tt>.</li>
+              <li><tt>extKeyUsage</tt>; <bcp14>MUST</bcp14> be critical; <bcp14>MUST</bcp14> assert only the Trust Anchor EKU, see <xref target="eku-ta"/>.</li>
+              <li><tt>subjectKeyIdentifier</tt>; <bcp14>MUST NOT</bcp14> be critical.</li>
+              <li><tt>authorityKeyIdentifier</tt>; <bcp14>MUST NOT</bcp14> be critical; <bcp14>MUST</bcp14> include only <tt>keyIdentifier</tt> with a value identical to <tt>subjectKeyIdentifier</tt>.</li>
+              <li><tt>certificatePolicies</tt>; see <xref target="cp-ext"/>.</li>
+            </ul>
+            <t>Root CA certificates <bcp14>MAY</bcp14> include other extensions, per the CA's CPS.</t>
+            <t>Certificates which do not assert the Trust Anchor EKU <bcp14>MUST NOT</bcp14> be accepted by relying parties as a root of trust.</t>
+          </section>
+        </section>
+        <section>
+          <name>Algorithm object identifiers</name>
+          <t>For the following cryptographic algorithms, the following OIDs <bcp14>MUST</bcp14> be used:</t>
+          <ul>
+            <li>NIST ECC P-256: <tt>1.2.840.10045.3.1.7</tt></li>
+            <li>NIST ECC P-384: <tt>1.3.132.0.34</tt></li>
+            <li>NIST ECC P-521: <tt>1.3.132.0.35</tt></li>
+            <li>TODO: more</li>
+          </ul>
+          <t>Elliptic curve subject public keys <bcp14>MUST</bcp14> used a named curve OID, and <bcp14>MUST NOT</bcp14>
+            use explicit curve parameters.</t>
+          <t>A CA <bcp14>MAY</bcp14>, in its CPS, define the OIDs it uses for other cryptographic algorithms.</t>
+        </section>
+        <section>
+          <name>Name forms</name>
+          <t>
+            <xref target="std-cert-names"/>
+            defines the required and optional name attributes in this PKI.
+          </t>
+          <t>For each certificate the value of the issuer field <bcp14>MUST</bcp14> be byte-for-byte identical to the
+            value of the subject field of the issuing CA certificate.
+          </t>
+          <t>When encoding a name, CAs <bcp14>MUST</bcp14> encode them as such:
+          </t>
+          <ul>
+            <li>A name <bcp14>MUST</bcp14> be an RDNSequence.
+            </li>
+            <li>Each RelativeDistinguishedName <bcp14>MUST</bcp14> contain exactly one AttributeTypeAndValue.
+            </li>
+            <li>
+              <t>RelativeDistinguishedNames <bcp14>MUST</bcp14> be placed in the RDNSequence in the following order:</t>
+              <ol>
+                <li>ISO 3166 Country Code</li>
+                <li>State or province name</li>
+                <li>Organisation name</li>
+                <li>Company code</li>
+                <li>Common name</li>
+                <li>Any CA specific attributes</li>
+                <li>Key ID</li>
+              </ol>
+            </li>
+            <li>Each Name <bcp14>MUST NOT</bcp14> contain more than one instance of a given AttributeTypeAndValue.
+            </li>
+          </ul>
+        </section>
+        <section>
+          <name>Name constraints</name>
+          <t>Name constraints <bcp14>MUST NOT</bcp14> be used in this PKI.
+          </t>
+        </section>
+        <section anchor="cp-ext">
+          <name>Certificate policy object identifier</name>
+          <t>For standard certificates, the certificate policy extension <bcp14>MUST</bcp14> be included, asserting
+            this document's OID, as defined in<xref target="doc-id"/>. This extension <bcp14>MUST</bcp14> be marked
+            critical.</t>
+        </section>
+        <section>
+          <name>Usage of Policy Constraints extension</name>
+          <t>This extension <bcp14>MUST NOT</bcp14> be present.</t>
+        </section>
+        <section>
+          <name>Policy qualifiers syntax and semantics</name>
+          <t>The certificate policy extension <bcp14>MUST</bcp14> include the CA's CPS in a <tt>CPSuri</tt> qualifier.
+          </t>
+          <t>A CA <bcp14>MAY</bcp14> include a textual notice in its policy qualifiers. If it does so it
+            <bcp14>MUST</bcp14>
+            use the <tt>explicitText</tt> form. A relying party encountering such a notice <bcp14>MUST</bcp14> display
+            it during ticket control.
+          </t>
+        </section>
+        <section>
+          <name>Processing semantics for the critical Certificate Policies extension</name>
+          <t>Relying parties <bcp14>MUST</bcp14> reject certificates asserting a CP they do not deem acceptable.</t>
+        </section>
+      </section>
+      <section>
+        <name>CRL Profile</name>
+        <section>
+          <name>Version number(s)</name>
+          <t>CAs <bcp14>MUST</bcp14> issue version 2 CRLs as per <xref target="RFC5280"/>. CRLs <bcp14>MUST NOT</bcp14>
+            include Indirect or Delta CRLs. The scope of each CRL <bcp14>MUST</bcp14> be all certificates issued by a
+            CA.
+          </t>
+          <t>The contents of the CRL is a list of all non-expired certificates that have been revoked by the CA. Where
+            two or more CRLs are issued by the same CA, the CRL with the highest value of the "CRL Number" field
+            supersedes all other CRLs issued by this CA.
+          </t>
+        </section>
+        <section>
+          <name>CRL and CRL entry extensions</name>
+          <t>A CRL <bcp14>MUST</bcp14> include the CRL Number and the Authority Key Identifier extensions. A CRL
+            <bcp14>MUST NOT</bcp14> include any other extension.
+          </t>
+          <t>A CRL entry <bcp14>MUST</bcp14> include a Reason extension.</t>
+          <t>A CRL entry <bcp14>MAY</bcp14> include a Revocation Notice extension
+            (see <xref target="revocation-notice-ext"/>). If present, relying parties <bcp14>MUST</bcp14> display this
+            during ticket inspection.</t>
+          <t>A CRL entry <bcp14>MUST NOT</bcp14> include any other extensions.</t>
+        </section>
+      </section>
+      <section>
+        <name>OCSP Profile</name>
+        <section>
+          <name>Version number(s)</name>
+          <t>A CA <bcp14>MUST</bcp14> provide a version 1 OCSP service as per <xref target="RFC6960"/>.</t>
+          <t>CAs <bcp14>MUST</bcp14> generate a separate OCSP responder certificate, they <bcp14>MUST NOT</bcp14> use the
+            CA certificate to sign OCSP responses.</t>
+        </section>
+        <section>
+          <name>OCSP extensions</name>
+          <t>CAs <bcp14>MUST</bcp14> support the OCSP Nonce extension.</t>
+          <t>CAs <bcp14>MAY</bcp14> support other <tt>responseExtensions</tt>.</t>
+          <t>The <tt>singleExtensions</tt> of an OCSP response <bcp14>MUST NOT</bcp14> contain the reasonCode CRL entry extension.</t>
+          <t>The <tt>singleExtensions</tt> of an OCSP response <bcp14>MAY</bcp14> contain the Revocation Notice extension.
+            It <bcp14>MUST</bcp14> be present if also present in the CRL, and vice versa. Relying parties <bcp14>MUST</bcp14>
+            process it the same as if it was in the CRL.</t>
+          <t>The <tt>singleExtensions</tt> of an OCSP response <bcp14>MUST NOT</bcp14> contain any other extension.</t>
+        </section>
+      </section>
+    </section>
+    <section>
+      <name>Compliance, Audit, and Other Assessments</name>
+      <section>
+        <name>Frequency or circumstances of assessment</name>
+      </section>
+      <section>
+        <name>Identity/qualifications of assessor</name>
+      </section>
+      <section>
+        <name>Assessor's relationship to assessed entity</name>
+      </section>
+      <section>
+        <name>Topics covered by assessment</name>
+      </section>
+      <section>
+        <name>Actions taken as a result of deficiency</name>
+      </section>
+      <section>
+        <name>Communication of result</name>
+      </section>
+    </section>
+    <section>
+      <name>Other Business and Legal Matters</name>
+      <section>
+        <name>Fees</name>
+        <section>
+          <name>Certificate issuance or renewal fees</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>Certificate access fees</name>
+          <t>No fees may be levied by participants in this TPKI for access to certificates.</t>
+        </section>
+        <section>
+          <name>Revocation or status information access fees</name>
+          <t>No fees may be levied by participants in this TPKI for access to revocation information.</t>
+        </section>
+        <section>
+          <name>Fees for other services</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>Refund policy</name>
+          <t>No stipulation.</t>
+        </section>
+      </section>
+      <section>
+        <name>Financial responsibility</name>
+        <section>
+          <name>Insurance coverage</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>Other assets</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>Insurance or warranty coverage for end-entities</name>
+          <t>No stipulation.</t>
+        </section>
+      </section>
+      <section>
+        <name>Confidentiality of business information</name>
+        <section>
+          <name>Scope of confidential information</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>Information not within the scope of confidential information</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>Responsibility to protect confidential information</name>
+          <t>No stipulation.</t>
+        </section>
+      </section>
+      <section>
+        <name>Privacy of personal information</name>
+        <section>
+          <name>Privacy plan</name>
+          <t>Participants in this TPKI <bcp14>MUST</bcp14> have an appropriate plan to preserve the privacy of personal
+            information insofar as it is processed within the TPKI. This plan <bcp14>MUST</bcp14> be compliant with the
+            European Union's General Data Protection Regulations.
+          </t>
+        </section>
+        <section>
+          <name>Information treated as private</name>
+          <t>At a minimum, the following information <bcp14>MUST</bcp14> treated as private:
+          </t>
+          <ul>
+            <li>A person's name</li>
+            <li>A person's email</li>
+            <li>A person's date of birth</li>
+            <li>A person's home address</li>
+            <li>A person's phone number</li>
+          </ul>
+          <t>That information is to be treated as private does not preclude its disclosure if appropriate circumstances
+            necessitate it.
+          </t>
+        </section>
+        <section>
+          <name>Information not deemed private</name>
+          <t>At a minimum, the following information <bcp14>MUST NOT</bcp14> be treated as private:
+          </t>
+          <ul>
+            <li>Names of organisations</li>
+            <li>Identifiers (e.g. company registration numbers) of organisations</li>
+            <li>RICS company codes</li>
+            <li>ERA organisation codes</li>
+            <li>Email addresses of organisations</li>
+            <li>Addresses of organisations</li>
+          </ul>
+        </section>
+        <section>
+          <name>Responsibility to protect private information</name>
+          <t>All parties in this TPKI <bcp14>MUST</bcp14> work to protect private information, in accordance with the
+            European Union's General Data Protection Regulations and any applicable local regulations.
+          </t>
+        </section>
+        <section>
+          <name>Notice and consent to use private information</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>Disclosure pursuant to judicial or administrative process</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>Other information disclosure circumstances</name>
+          <t>No stipulation.</t>
+        </section>
+      </section>
+      <section>
+        <name>Intellectual property rights</name>
+        <t>No stipulation.</t>
+      </section>
+      <section>
+        <name>Representations and warranties</name>
+        <section>
+          <name>CA representations and warranties</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>RA representations and warranties</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>Subscriber representations and warranties</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>Relying party representations and warranties</name>
+          <t>No stipulation.</t>
+        </section>
+        <section>
+          <name>Representations and warranties of other participants</name>
+          <t>No stipulation.</t>
+        </section>
+      </section>
+      <section>
+        <name>Disclaimers of warranties</name>
+        <t>No stipulation.</t>
+      </section>
+      <section>
+        <name>Limitations of liability</name>
+        <t>No stipulation.</t>
+      </section>
+      <section>
+        <name>Indemnities</name>
+        <t>No stipulation.</t>
+      </section>
+      <section>
+        <name>Term and termination</name>
+        <section>
+          <name>Term</name>
+          <t>This CP comes into effect from XX/XX/XXXX.</t>
+          <t>This CP remains in force unless otherwise amended or rescinded.</t>
+        </section>
+        <section>
+          <name>Termination</name>
+          <t>This CP may be rescinded at the sole discretion of the UIC TSG. The effective date of this
+            <bcp14>MUST</bcp14>
+            be at least 6 months into the future from the date of publication.
+          </t>
+        </section>
+        <section>
+          <name>Effect of termination and survival</name>
+          <t>No stipulation.</t>
+        </section>
+      </section>
+      <section>
+        <name>Individual notices and communications with participants</name>
+        <t>No stipulation.</t>
+      </section>
+      <section>
+        <name>Amendments</name>
+        <section>
+          <name>Procedure for amendment</name>
+          <t>This CP may be amended at the sole discretion of the UIC TSG.</t>
+        </section>
+        <section>
+          <name>Notification mechanism and period</name>
+          <t>Notification of such amendment, and the new version of this CP <bcp14>MUST</bcp14> be posted on the UIC's
+            website.
+          </t>
+          <t>Subsequent editions of this CP <bcp14>MUST</bcp14> include the dat at which they are to come into effect.
+            Such a date <bcp14>MUST</bcp14> be at least 3 months into the future from the date of publication.
+          </t>
+          <t>The notification of an amended CP <bcp14>SHOULD</bcp14> include a changelog of what modifications have been
+            made to the CP.
+          </t>
+        </section>
+        <section>
+          <name>Circumstances under which OID must be changed</name>
+          <t>If the UIC TSG judges that changes to the CP do not materially change the acceptability of certificates for
+            ticketing purposes, there will be no change to the CP OID. If the UIC TSG judges that changes to the CP do
+            materially change the acceptability of certificates for ticketing purposes, then there MUST be a new CP OID.
+          </t>
+        </section>
+      </section>
+      <section>
+        <name>Dispute resolution provisions</name>
+        <t>No stipulation</t>
+      </section>
+      <section>
+        <name>Governing law</name>
+        <t>Unless otherwise agreed, this CP, CPSes, and any additional agreements, are to be governed by the laws of
+          France.
+        </t>
+      </section>
+      <section>
+        <name>Compliance with applicable law</name>
+        <t>Parties <bcp14>SHALL</bcp14> issue Certificates and operate within this TPKI in accordance with all law
+          applicable to its business in every jurisdiction in which they operate.
+        </t>
+      </section>
+      <section>
+        <name>Miscellaneous provisions</name>
+        <section>
+          <name>Entire agreement</name>
+          <t>No stipulation</t>
+        </section>
+        <section>
+          <name>Assignment</name>
+          <t>No stipulation</t>
+        </section>
+        <section>
+          <name>Severability</name>
+          <t>In the event of a conflict between this CP and a law, regulation or government order of any jurisdiction in
+            which a party operates, such party <bcp14>MAY</bcp14> modify any conflicting requirement to the minimum
+            extent necessary to make the requirement valid and legal in said jurisdiction.
+            This applies only to operations subject to such requirement.
+          </t>
+
+          <t>In cases of a CA it <bcp14>SHALL</bcp14> immediately, prior to issuing a certificate under the modified
+            requirement, include in Section 9.16.3 of its CPS a reference to the regulation requiring a deviation from
+            this CP, and how such a modification is implemented by the CA.
+            The CA <bcp14>MUST</bcp14> also inform, prior to issuance, the responsible contact person for this CP, such
+            that an amendment to the CP may be considered.
+          </t>
+
+          <t>Any modification to these requirements <bcp14>MUST</bcp14> be discontinued as soon as the relevant
+            regulation ceases to have effect, or this CP is modified in such a way to make it possible to comply with
+            both simultaneously.
+          </t>
+        </section>
+        <section>
+          <name>Enforcement (attorneys' fees and waiver of rights)</name>
+          <t>No stipulation</t>
+        </section>
+        <section>
+          <name>Force Majeure</name>
+          <t>No stipulation</t>
+        </section>
+      </section>
+      <section>
+        <name>Other provisions</name>
+        <t>No stipulation</t>
+      </section>
+    </section>
+  </middle>
+  <back>
+    <references>
+      <name>References</name>
+      <references>
+        <name>Normative References</name>
+        <referencegroup anchor="BCP14" target="https://www.rfc-editor.org/info/bcp14">
+          <xi:include href="https://www.rfc-editor.org/refs/bibxml/reference.RFC.2119.xml"/>
+          <xi:include href="https://www.rfc-editor.org/refs/bibxml/reference.RFC.8174.xml"/>
+        </referencegroup>
+        <xi:include href="https://www.rfc-editor.org/refs/bibxml/reference.RFC.3647.xml"/>
+        <xi:include href="https://www.rfc-editor.org/refs/bibxml/reference.RFC.9110.xml"/>
+        <xi:include href="https://www.rfc-editor.org/refs/bibxml/reference.RFC.2797.xml"/>
+        <xi:include href="https://www.rfc-editor.org/refs/bibxml/reference.RFC.5280.xml"/>
+        <xi:include href="https://www.rfc-editor.org/refs/bibxml/reference.RFC.6960.xml"/>
+
+        <reference anchor="ISO3166-1" target="https://www.iso.org/standard/72482.html">
+          <front>
+            <title>Codes for the representation of names of countries and their subdivisions - Part 1: Country code
+            </title>
+            <seriesInfo name="ISO" value="3166-1:2020"/>
+            <author>
+              <organization>International Organization for Standardization</organization>
+            </author>
+          </front>
+        </reference>
+        <reference anchor="ISO3166-2" target="https://www.iso.org/standard/72483.html">
+          <front>
+            <title>Codes for the representation of names of countries and their subdivisions - Part 2: Country
+              subdivision code
+            </title>
+            <seriesInfo name="ISO" value="3166-2:2020"/>
+            <author>
+              <organization>International Organization for Standardization</organization>
+            </author>
+          </front>
+        </reference>
+      </references>
+      <references>
+        <name>Informative References</name>
+      </references>
+    </references>
+    <section>
+      <name>ASN.1 Definitions</name>
+      <t>This section details the additional ASN.1 elements defined in addition to those of
+        <xref target="RFC5280"/>
+        that are required for the operation of a TPKI.
+      </t>
+      <t>OIDs defined for these extensions are under the following arc:</t>
+      <sourcecode type="asn.1">id-as207960-uic OBJECT IDENTIFIER ::= { 1 3 6 1 4 1 56292 1 3 }</sourcecode>
+      <section>
+        <name>Name Attributes</name>
+        <t>This document defines two new name attributes for identifying companies and their signing keys in their
+          certificates.
+        </t>
+        <t>Name Attributes are defined under the following arc:</t>
+        <sourcecode type="asn.1">id-at OBJECT IDENTIFIER ::= { id-as207960-uic 2 }</sourcecode>
+        <section anchor="at-company-code">
+          <name>Company Code Name Attribute</name>
+          <t>This attribute is defined by the following OID and ASN.1:</t>
+          <sourcecode type="asn.1">
+id-at-companyCode OBJECT IDENTIFIER ::= { id-at 1 }
+X520CompanyCode ::= CompanyCode
+
+CompanyCode ::= CHOICE {
+  codeNum INTEGER (1..32000),
+  codeIA5 IA5String
+}
+          </sourcecode>
+          <t>The <tt>codeNum</tt> variant <bcp14>MUST</bcp14> be used in case the organisation has a RICS code, or
+            is otherwise identified by a numeric ID. The numbers 0 through 9999 <bcp14>MUST</bcp14> only be used
+            to specify RICS codes, other coding schemes <bcp14>MUST</bcp14> be placed above 9999.
+          </t>
+          <t>The <tt>codeIA5</tt> variant <bcp14>MAY</bcp14> be used in case the organisation has an ERA company code,
+            but no RICS code, or is otherwise only identified by an alphanumeric code.
+          </t>
+        </section>
+        <section anchor="at-key-id">
+          <name>Key ID Attribute</name>
+          <t>This attribute is used in the ticket barcode to identify the end-entity certificate used to verify the
+            ticket.
+            The combination of the company code and key ID uniquely identifies the key pair used to sign the ticket.
+          </t>
+          <t>The attribute is defined by the following OID and ASN.1:</t>
+          <sourcecode type="asn.1">
+it-at-keyId OBJECT IDENTIFIER ::= { id-at 2 }
+X520KeyId ::= Choice {
+  number INTEGER (0..99999), -- For DOSIPAS envelopes,
+  ia5 IA5String (SIZE (5)) -- For #UT envelopes
+}
+          </sourcecode>
+          <t>In the case of a purely numeric key ID, the <tt>number</tt> variant <bcp14>SHALL</bcp14> be used, otherwise
+            the <tt>ia5</tt> variant <bcp14>SHALL</bcp14> be used.
+          </t>
+        </section>
+      </section>
+      <section>
+        <name>Extended Key Usages</name>
+        <t>Extended Key Usages are defined under the following arc:</t>
+        <sourcecode type="asn.1">id-eku OBJECT IDENTIFIER ::= { id-as207960-uic 1 }</sourcecode>
+        <section anchor="eku-ta">
+          <name>Trust Anchor EKU</name>
+          <t>This EKU is defined by the following OID:</t>
+          <sourcecode type="asn.1">id-eku-trustAnchor OBJECT IDENTIFIER ::= { id-eku 1 }</sourcecode>
+          <t>This EKU marks that a certificate is intended to be used as a trust anchor.</t>
+        </section>
+      </section>
+      <section>
+        <name>Certificate Extensions</name>
+        <t>Certificate Extensions are defined under the following arc:</t>
+        <sourcecode type="asn.1">id-ext OBJECT IDENTIFIER ::= { id-as207960-uic 3 }</sourcecode>
+        <section anchor="revocation-notice-ext">
+          <name>Revocation Notice Extension</name>
+          <t>This extension defines a notice to be displayed to inspection staff upon encountering a revoked
+            certificate.
+          </t>
+          <t>The extension is defined by the following OID and ASN.1:</t>
+          <sourcecode type="asn.1">
+it-ext-revocationNotice OBJECT IDENTIFIER ::= { id-ext 2 }
+RevocationNotice ::= UTF8String
+          </sourcecode>
+        </section>
+      </section>
+    </section>
+    <section anchor="star-cert-format">
+      <name>STAR Certificate Format</name>
+    </section>
+  </back>
+</rfc>
